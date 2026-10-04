@@ -179,5 +179,3 @@ new-project-cleanup/
 * **Palette**: Clay light `#fff8eb`, Terracotta `#c9754a`, Teal `#6f9a8a`, Deep patina `#5b8073`, Warm dark brown `#4a2f20`.
 * **Wobble Filter**: SVG `feTurbulence` + `feDisplacementMap` filter for organic handmade clay edges.
 * **Tween System**: Cubic bezier easing function with tab-visibility awareness and timeout safety guards to prevent animation frame stalling.
-#   d o c u m e n t - j a n i t o r  
- 
