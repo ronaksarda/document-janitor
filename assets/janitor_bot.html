@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Janitor Bot SVG Rig</title>
+  <style>
+    body {
+      background: #e6d6b1;
+      margin: 0;
+      padding: 24px;
+      font-family: Georgia, serif;
+      color: #4a2f20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stage {
+      width: 800px;
+      height: 420px;
+      background: #dfcfab;
+      border: 3px solid #c9754a;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(74, 47, 32, 0.15);
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      background: #c9754a;
+      color: #fff;
+      border: 2px solid #4a2f20;
+      border-radius: 8px 6px 10px 7px;
+      padding: 8px 18px;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 2px 3px 0 #4a2f20;
+    }
+    button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 #4a2f20;
+    }
+    .speech {
+      position: absolute;
+      background: #fff8eb;
+      border: 2px solid #4a2f20;
+      border-radius: 12px 14px 10px 15px;
+      padding: 8px 14px;
+      font-size: 13px;
+      max-width: 240px;
+      box-shadow: 2px 3px 0 rgba(74, 47, 32, 0.2);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 10;
+    }
+    .speech::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 20px;
+      border-width: 8px 8px 0;
+      border-style: solid;
+      border-color: #fff8eb transparent;
+      display: block;
+      width: 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Downloads Janitor - SVG Rig</h2>
+  <div class="stage">
+    <div id="speechBubble" class="speech"></div>
+    <svg viewBox="0 0 800 420" id="rigSvg">
+      <defs>
+        <!-- Clay wobble filter -->
+        <filter id="clayWobble" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <!-- Gradients and clip paths -->
+        <clipPath id="binClip">
+          <rect x="0" y="0" width="80" height="90" rx="6" />
+        </clipPath>
+      </defs>
+
+      <!-- Floor line -->
+      <line x1="0" y1="360" x2="800" y2="360" stroke="#4a2f20" stroke-width="4" stroke-linecap="round" />
+      <line x1="0" y1="365" x2="800" y2="365" stroke="#c9754a" stroke-width="2" stroke-dasharray="8 6" opacity="0.6" />
+
+      <!-- Pile on the left -->
+      <g id="filePile" transform="translate(60, 310)">
+        <rect x="0" y="24" width="70" height="26" rx="4" fill="#dfcfab" stroke="#4a2f20" stroke-width="2" />
+        <rect x="6" y="14" width="68" height="24" rx="4" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+        <rect x="12" y="2" width="66" height="24" rx="4" fill="#c9754a" stroke="#4a2f20" stroke-width="2" />
+        <text x="24" y="18" font-family="Georgia" font-size="11" fill="#fff" font-weight="bold">PILE</text>
+      </g>
+
+      <!-- Destination Bin on the right -->
+      <g id="bin" transform="translate(650, 275)" filter="url(#clayWobble)">
+        <!-- Bin back -->
+        <rect x="0" y="10" width="86" height="85" rx="8" fill="#5b8073" stroke="#4a2f20" stroke-width="3" />
+        <!-- Inside dropping area -->
+        <g id="binInterior"></g>
+        <!-- Bin front -->
+        <rect x="0" y="25" width="86" height="70" rx="6" fill="#6f9a8a" stroke="#4a2f20" stroke-width="3" />
+        <!-- Bin rim -->
+        <rect x="-4" y="20" width="94" height="12" rx="4" fill="#7faaa0" stroke="#4a2f20" stroke-width="2.5" />
+        <!-- Label & Counter -->
+        <text id="binLabel" x="43" y="58" font-family="Georgia" font-size="12" fill="#4a2f20" font-weight="bold" text-anchor="middle">BIN</text>
+        <text id="binCounter" x="43" y="78" font-family="Georgia" font-size="15" fill="#4a2f20" font-weight="bold" text-anchor="middle">0</text>
+        <!-- Floating +1 -->
+        <text id="binPlusOne" x="43" y="20" font-family="Georgia" font-size="16" fill="#c9754a" font-weight="bold" text-anchor="middle" opacity="0">+1</text>
+      </g>
+
+      <!-- Potted Sprout at far right -->
+      <g id="pottedSprout" transform="translate(750, 320)">
+        <path d="M4 25 L8 40 L28 40 L32 25 Z" fill="#c9754a" stroke="#4a2f20" stroke-width="2" />
+        <!-- Soil -->
+        <ellipse cx="18" cy="25" rx="14" ry="4" fill="#4a2f20" />
+        <!-- Stem & leaves -->
+        <g id="sproutGrowth">
+          <path id="sproutStem" d="M18 24 Q18 10 22 2" stroke="#4a2f20" stroke-width="2.5" fill="none" stroke-linecap="round" />
+          <path id="sproutLeaf" d="M22 2 C32 -4 32 12 22 4 C18 0 16 -8 22 2" fill="#6f9a8a" stroke="#4a2f20" stroke-width="1.5" />
+        </g>
+      </g>
+
+      <!-- ROBOT RIG ROOT -->
+      <g id="botRig" transform="translate(180, 220)">
+        <!-- Ghost / Trail for Dry Run -->
+        <g id="ghostTrail" opacity="0"></g>
+
+        <!-- Shadow -->
+        <ellipse id="botShadow" cx="30" cy="140" rx="36" ry="7" fill="#4a2f20" opacity="0.25" />
+
+        <!-- Legs (legL, legR) -->
+        <g id="legL" transform="translate(14, 105)">
+          <rect x="0" y="0" width="14" height="34" rx="6" fill="#b96a40" stroke="#4a2f20" stroke-width="2.5" filter="url(#clayWobble)" />
+          <path d="M-2 26 C-2 36 16 36 16 34 L16 26 Z" fill="#5b8073" stroke="#4a2f20" stroke-width="2" />
+        </g>
+        <g id="legR" transform="translate(32, 105)">
+          <rect x="0" y="0" width="14" height="34" rx="6" fill="#c9754a" stroke="#4a2f20" stroke-width="2.5" filter="url(#clayWobble)" />
+          <path d="M-2 26 C-2 36 16 36 16 34 L16 26 Z" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+        </g>
+
+        <!-- Left Arm (armL) - behind body -->
+        <g id="armL" transform="translate(6, 60)">
+          <!-- Shoulder joint -->
+          <circle cx="0" cy="0" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+          <!-- Limb -->
+          <path id="armLimbL" d="M0 0 L-6 24 L10 32" fill="none" stroke="#b96a40" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+          <!-- Hand -->
+          <circle id="handL" cx="10" cy="32" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+        </g>
+
+        <!-- Robot Body Group (rb) -->
+        <g id="rb" transform="translate(0, 0)">
+          <!-- Torso -->
+          <rect x="4" y="52" width="52" height="54" rx="12" fill="#c9754a" stroke="#4a2f20" stroke-width="3" filter="url(#clayWobble)" />
+          <!-- Teal patina wash patches on body -->
+          <path d="M8 58 Q18 64 24 54 Q32 62 48 58 L48 70 Q34 76 20 68 Q10 74 8 70 Z" fill="#6f9a8a" opacity="0.65" />
+          <path d="M12 90 Q22 84 36 94 Q44 88 52 92 L52 102 Q38 106 20 102 Z" fill="#5b8073" opacity="0.5" />
+          
+          <!-- Stitches / wire staples at bottom left of torso -->
+          <path d="M16 94 L16 102 M22 94 L22 102" stroke="#4a2f20" stroke-width="2" stroke-linecap="round" />
+          
+          <!-- Chest buttons / screws -->
+          <circle cx="42" cy="74" r="5" fill="#7faaa0" stroke="#4a2f20" stroke-width="1.8" />
+          <circle cx="30" cy="78" r="3.5" fill="#df8b5e" stroke="#4a2f20" stroke-width="1.5" />
+          <!-- Screw slot -->
+          <circle cx="42" cy="88" r="4" fill="#a85e35" stroke="#4a2f20" stroke-width="1.5" />
+          <line x1="39" y1="88" x2="45" y2="88" stroke="#4a2f20" stroke-width="1.5" />
+
+          <!-- Neck collar -->
+          <rect x="20" y="46" width="20" height="8" rx="3" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+
+          <!-- Head (ra group contains head + antenna) -->
+          <g id="ra" transform="translate(0, 0)">
+            <!-- Head box -->
+            <rect x="0" y="0" width="60" height="48" rx="14" fill="#c9754a" stroke="#4a2f20" stroke-width="3" filter="url(#clayWobble)" />
+            <!-- Teal patina on head -->
+            <path d="M6 8 Q20 18 36 6 Q48 16 54 8 L54 18 Q36 24 18 16 Z" fill="#6f9a8a" opacity="0.6" />
+            <path d="M10 38 Q24 32 40 42 L52 40 Q40 46 20 44 Z" fill="#6f9a8a" opacity="0.5" />
+
+            <!-- Ear bolts -->
+            <rect x="-6" y="18" width="6" height="10" rx="2" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+            <rect x="60" y="18" width="6" height="10" rx="2" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+
+            <!-- Mismatched Eyes -->
+            <!-- Left Eye: large terracotta ring, white eyeball, dark pupil -->
+            <circle cx="20" cy="24" r="11" fill="#df8b5e" stroke="#4a2f20" stroke-width="2" />
+            <circle cx="20" cy="24" r="8" fill="#fffdec" stroke="#4a2f20" stroke-width="1.5" />
+            <circle id="pupilL" cx="21" cy="24" r="4" fill="#4a2f20" />
+            <circle cx="19" cy="22" r="1.5" fill="#fff" />
+
+            <!-- Right Eye: smaller teal patina circle, dark pupil -->
+            <circle cx="43" cy="24" r="8" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+            <circle id="pupilR" cx="43" cy="24" r="3.5" fill="#4a2f20" />
+            <circle cx="41.5" cy="22.5" r="1" fill="#fff" />
+
+            <!-- Mouth: small curious clay indent -->
+            <ellipse cx="32" cy="38" rx="3.5" ry="2" fill="#4a2f20" />
+
+            <!-- Antenna Group (ant) -->
+            <g id="ant" transform="translate(30, 0)">
+              <!-- Base mount -->
+              <ellipse cx="0" cy="0" rx="7" ry="3" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+              <!-- Spring wire -->
+              <path id="springAnt" d="M0 0 Q-6 -6 0 -12 Q6 -18 0 -24 Q-5 -28 0 -34" fill="none" stroke="#4a2f20" stroke-width="2.5" stroke-linecap="round" />
+              <!-- Top terracotta bead -->
+              <circle cx="0" cy="-36" r="4.5" fill="#c9754a" stroke="#4a2f20" stroke-width="2" />
+            </g>
+          </g>
+        </g>
+
+        <!-- Right Arm (armR) - in front of body -->
+        <g id="armR" transform="translate(54, 60)">
+          <!-- Shoulder joint -->
+          <circle cx="0" cy="0" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+          <!-- Limb -->
+          <path id="armLimbR" d="M0 0 L12 24 L22 30" fill="none" stroke="#c9754a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+          <!-- Hand -->
+          <circle id="handR" cx="22" cy="30" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+        </g>
+
+        <!-- Carried File Chip Group (file) -->
+        <g id="file" transform="translate(30, 75)" opacity="0" filter="url(#clayWobble)">
+          <rect x="-18" y="-12" width="56" height="24" rx="5" fill="#fff8eb" stroke="#4a2f20" stroke-width="2" />
+          <rect x="-14" y="-8" width="14" height="16" rx="2" fill="#6f9a8a" />
+          <text id="fileChipText" x="6" y="4" font-family="Georgia" font-size="9" fill="#4a2f20" font-weight="bold">FILE.EXT</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="controls">
+    <button onclick="playPickUp()">1. Pick Up</button>
+    <button onclick="playCarry()">2. Carry to Bin</button>
+    <button onclick="playPutIn()">3. Put In Bin</button>
+    <button onclick="playFullCycle()">Play Full Sequence</button>
+    <button onclick="resetRig()">Reset</button>
+  </div>
+
+  <script>
+    // Rig State Object
+    const rigState = {
+      botX: 180,
+      botY: 220,
+      headAngle: 0,
+      headY: 0,
+      antennaAngle: 0,
+      antennaScaleY: 1,
+      legLAngle: 0,
+      legRAngle: 0,
+      armLAngle: 0,
+      armRAngle: 0,
+      fileVisible: false,
+      fileX: 30,
+      fileY: 75,
+      fileOpacity: 1,
+      binShakeX: 0,
+      binPlusOneOpacity: 0,
+      binPlusOneY: 20,
+      binCount: 0,
+      isDryRun: false
+    };
+
+    // DOM Elements
+    const botRig = document.getElementById('botRig');
+    const rb = document.getElementById('rb');
+    const ra = document.getElementById('ra');
+    const ant = document.getElementById('ant');
+    const legL = document.getElementById('legL');
+    const legR = document.getElementById('legR');
+    const armL = document.getElementById('armL');
+    const armR = document.getElementById('armR');
+    const file = document.getElementById('file');
+    const bin = document.getElementById('bin');
+    const binCounter = document.getElementById('binCounter');
+    const binPlusOne = document.getElementById('binPlusOne');
+    const speechBubble = document.getElementById('speechBubble');
+    const fileChipText = document.getElementById('fileChipText');
+
+    // Tween Helper (smooth lerp or stepped animation)
+    function tween(duration, onUpdate, onComplete) {
+      const startTime = performance.now();
+      return new Promise((resolve) => {
+        function step(now) {
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / duration);
+          // Ease in-out cubic
+          const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          onUpdate(ease, t);
+          renderRig();
+          if (t < 1) {
+            requestAnimationFrame(step);
+          } else {
+            if (onComplete) onComplete();
+            resolve();
+          }
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    // Render Loop
+    function renderRig() {
+      botRig.setAttribute('transform', `translate(${rigState.botX}, ${rigState.botY})`);
+      botRig.style.opacity = rigState.isDryRun ? '0.5' : '1.0';
+
+      ra.setAttribute('transform', `translate(0, ${rigState.headY}) rotate(${rigState.headAngle}, 30, 24)`);
+      ant.setAttribute('transform', `translate(30, 0) rotate(${rigState.antennaAngle}) scale(1, ${rigState.antennaScaleY})`);
+
+      legL.setAttribute('transform', `translate(14, 105) rotate(${rigState.legLAngle}, 7, 0)`);
+      legR.setAttribute('transform', `translate(32, 105) rotate(${rigState.legRAngle}, 7, 0)`);
+
+      armL.setAttribute('transform', `translate(6, 60) rotate(${rigState.armLAngle}, 0, 0)`);
+      armR.setAttribute('transform', `translate(54, 60) rotate(${rigState.armRAngle}, 0, 0)`);
+
+      if (rigState.fileVisible) {
+        file.style.opacity = rigState.fileOpacity;
+        file.setAttribute('transform', `translate(${rigState.fileX}, ${rigState.fileY})`);
+      } else {
+        file.style.opacity = '0';
+      }
+
+      bin.setAttribute('transform', `translate(${650 + rigState.binShakeX}, 275)`);
+      binCounter.textContent = rigState.binCount;
+      binPlusOne.style.opacity = rigState.binPlusOneOpacity;
+      binPlusOne.setAttribute('y', rigState.binPlusOneY);
+
+      // Speech bubble follows robot
+      if (speechBubble.style.opacity === '1') {
+        speechBubble.style.left = (rigState.botX - 40) + 'px';
+        speechBubble.style.top = (rigState.botY - 45) + 'px';
+      }
+    }
+
+    function showSpeech(text) {
+      speechBubble.textContent = text;
+      speechBubble.style.opacity = '1';
+      renderRig();
+    }
+
+    function hideSpeech() {
+      speechBubble.style.opacity = '0';
+    }
+
+    // Move 1: Pick Up
+    async function playPickUp(filename = "document.pdf") {
+      fileChipText.textContent = filename.length > 12 ? filename.substring(0, 11) + '..' : filename;
+      showSpeech("Picking up " + filename);
+      // Crouch down towards pile
+      await tween(350, (e) => {
+        rigState.botY = 220 + e * 18;
+        rigState.headAngle = e * 15;
+        rigState.headY = e * 6;
+        rigState.armRAngle = -e * 45;
+        rigState.armLAngle = e * 35;
+        rigState.legLAngle = -e * 15;
+        rigState.legRAngle = e * 15;
+      });
+
+      // Grab file
+      rigState.fileVisible = true;
+      rigState.fileOpacity = 1;
+      rigState.fileX = 40;
+      rigState.fileY = 85;
+
+      // Stand back up holding file
+      await tween(300, (e) => {
+        rigState.botY = 238 - e * 18;
+        rigState.headAngle = 15 - e * 15;
+        rigState.headY = 6 - e * 6;
+        rigState.armRAngle = -45 + e * 20;
+        rigState.armLAngle = 35 - e * 35;
+        rigState.legLAngle = -15 + e * 15;
+        rigState.legRAngle = 15 - e * 15;
+        rigState.fileY = 85 - e * 10;
+      });
+      hideSpeech();
+    }
+
+    // Move 2: Carry
+    async function playCarry(targetX = 580, reason = "Matched rule -> Moving to Bin") {
+      showSpeech(reason);
+      const startX = rigState.botX;
+      const dist = targetX - startX;
+      const steps = 8;
+      const duration = 1200;
+
+      await tween(duration, (e, t) => {
+        rigState.botX = startX + dist * e;
+        // Walking bounce and leg swings
+        const cycle = Math.sin(t * Math.PI * steps);
+        rigState.botY = 220 + Math.abs(Math.sin(t * Math.PI * steps * 2)) * 4;
+        rigState.legLAngle = cycle * 22;
+        rigState.legRAngle = -cycle * 22;
+        rigState.armLAngle = -cycle * 20;
+        rigState.armRAngle = -25 + cycle * 12;
+        // Antenna wobble
+        rigState.antennaAngle = Math.cos(t * Math.PI * steps) * 12;
+      });
+
+      rigState.legLAngle = 0;
+      rigState.legRAngle = 0;
+      rigState.armLAngle = 0;
+      rigState.armRAngle = -20;
+      rigState.antennaAngle = 0;
+      renderRig();
+    }
+
+    // Move 3: Put In
+    async function playPutIn() {
+      // Lift file over bin
+      await tween(250, (e) => {
+        rigState.armRAngle = -20 - e * 35;
+        rigState.fileY = 75 - e * 25;
+        rigState.fileX = 40 + e * 15;
+      });
+
+      // Release & drop chip behind bin front
+      await tween(250, (e) => {
+        rigState.fileY = 50 + e * 55;
+        rigState.fileOpacity = 1 - e;
+      });
+      rigState.fileVisible = false;
+
+      // Bin shakes, counter ticks, +1 floats up
+      rigState.binCount += 1;
+      rigState.binPlusOneOpacity = 1;
+      rigState.binPlusOneY = 20;
+
+      await tween(400, (e) => {
+        // Shake
+        rigState.binShakeX = Math.sin(e * Math.PI * 6) * (1 - e) * 6;
+        // +1 float up and fade
+        rigState.binPlusOneY = 20 - e * 25;
+        rigState.binPlusOneOpacity = 1 - e;
+        // Arm returns
+        rigState.armRAngle = -55 + e * 55;
+      });
+
+      rigState.binShakeX = 0;
+      rigState.binPlusOneOpacity = 0;
+      hideSpeech();
+      renderRig();
+    }
+
+    async function playFullCycle() {
+      await playPickUp("Quarterly_Report.pdf");
+      await playCarry(580, "Matched Documents rule -> Documents/2026-04");
+      await playPutIn();
+      // Walk back
+      showSpeech("Returning to pile");
+      await tween(800, (e, t) => {
+        rigState.botX = 580 - (580 - 180) * e;
+        const cycle = Math.sin(t * Math.PI * 6);
+        rigState.legLAngle = cycle * 18;
+        rigState.legRAngle = -cycle * 18;
+      });
+      rigState.legLAngle = 0;
+      rigState.legRAngle = 0;
+      hideSpeech();
+      renderRig();
+    }
+
+    function resetRig() {
+      rigState.botX = 180;
+      rigState.botY = 220;
+      rigState.headAngle = 0;
+      rigState.headY = 0;
+      rigState.antennaAngle = 0;
+      rigState.legLAngle = 0;
+      rigState.legRAngle = 0;
+      rigState.armLAngle = 0;
+      rigState.armRAngle = 0;
+      rigState.fileVisible = false;
+      rigState.fileOpacity = 1;
+      rigState.fileX = 30;
+      rigState.fileY = 75;
+      rigState.binShakeX = 0;
+      rigState.binPlusOneOpacity = 0;
+      rigState.binCount = 0;
+      hideSpeech();
+      renderRig();
+    }
+
+    // Initial render
+    renderRig();
+  </script>
+</body>
+</html>

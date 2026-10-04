@@ -1,0 +1,22 @@
+# Downloads Janitor Configuration
+# Fixed list of allowed target folders. Never invent a folder outside this list.
+allowed_folders:
+  - Screenshots
+  - WhatsApp
+  - Installers
+  - Documents
+  - Pictures
+  - Videos
+  - Audio
+  - Archives
+  - Duplicates
+
+# Settings
+skip_recent_minutes: 10
+ignore_folder_names:
+  - keep
+  - ignore
+skip_extensions:
+  - .crdownload
+  - .part
+  - .tmp

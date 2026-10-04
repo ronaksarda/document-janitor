@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Downloads Janitor</title>
+  <style>
+    :root {
+      --bg: #e6d6b1;
+      --card-bg: #dfcfab;
+      --terracotta: #c9754a;
+      --terracotta-dark: #b15d34;
+      --teal: #6f9a8a;
+      --teal-dark: #577e70;
+      --clay-dark: #4a2f20;
+      --clay-light: #fff8eb;
+      --border-color: #4a2f20;
+      --surface-border: #4a2f20;
+      --text: #4a2f20;
+      --text-muted: #7d5e4b;
+    }
+
+    body.dark-mode {
+      --bg: #2a2019;
+      --card-bg: #382c23;
+      --terracotta: #c9754a;
+      --terracotta-dark: #a85a31;
+      --teal: #5b8073;
+      --teal-dark: #456358;
+      --clay-dark: #e8d7c3;
+      --clay-light: #44342a;
+      --border-color: #5c4535;
+      --surface-border: #5c4535;
+      --text: #ecdcc9;
+      --text-muted: #b89f8c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: Georgia, 'Times New Roman', serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    header {
+      padding: 18px 28px;
+      border-bottom: 3px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+
+    .brand h1 {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--terracotta);
+      letter-spacing: -0.5px;
+    }
+
+    .brand .tagline {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stats-pill {
+      font-size: 13px;
+      padding: 4px 10px;
+      background: var(--clay-light);
+      border: 1.5px solid var(--border-color);
+      border-radius: 6px 8px 5px 7px;
+    }
+
+    button.clay-btn {
+      background: var(--terracotta);
+      color: #fff;
+      border: 2px solid var(--border-color);
+      border-radius: 8px 6px 9px 7px;
+      padding: 7px 16px;
+      font-family: Georgia, serif;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 2px 3px 0 var(--border-color);
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+    }
+
+    button.clay-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--border-color);
+    }
+
+    button.clay-btn.teal {
+      background: var(--teal);
+    }
+
+    button.clay-btn.outline {
+      background: var(--clay-light);
+      color: var(--text);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 28px 0;
+      background: var(--card-bg);
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 2px solid transparent;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 18px;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--bg);
+      color: var(--text);
+      border-color: var(--border-color);
+      border-bottom: 2px solid var(--bg);
+      margin-bottom: -2px;
+    }
+
+    main {
+      flex: 1;
+      padding: 20px 28px;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    /* THE FLOOR */
+    .stage-container {
+      width: 100%;
+      background: var(--card-bg);
+      border: 3px solid var(--border-color);
+      border-radius: 12px 14px 10px 15px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 3px 5px 0 rgba(74, 47, 32, 0.15);
+    }
+
+    #floorSvg {
+      width: 100%;
+      height: 440px;
+      display: block;
+    }
+
+    .speech-bubble {
+      position: absolute;
+      background: var(--clay-light);
+      color: var(--clay-dark);
+      border: 2px solid var(--border-color);
+      border-radius: 10px 14px 8px 12px;
+      padding: 6px 12px;
+      font-size: 13px;
+      max-width: 280px;
+      box-shadow: 2px 3px 0 rgba(74, 47, 32, 0.2);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 10;
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -7px;
+      left: 20px;
+      border-width: 7px 7px 0;
+      border-style: solid;
+      border-color: var(--clay-light) transparent;
+      display: block;
+      width: 0;
+    }
+
+    .dir-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 8px 10px 8px 9px;
+      padding: 8px 14px;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 2px 3px 0 rgba(74, 47, 32, 0.1);
+    }
+
+    .dir-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dir-label {
+      font-weight: bold;
+      color: var(--terracotta);
+      font-size: 11px;
+      letter-spacing: 0.8px;
+    }
+
+    .dir-path {
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      color: var(--clay-dark);
+      background: rgba(0, 0, 0, 0.06);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(74, 47, 32, 0.15);
+      max-width: 450px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dir-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dir-input {
+      padding: 5px 9px;
+      font-size: 12px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--clay-light);
+      color: var(--clay-dark);
+      width: 220px;
+      font-family: inherit;
+    }
+
+    .clay-btn.small {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .floor-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      padding: 12px 18px;
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 8px 10px 7px 9px;
+    }
+
+    .floor-actions-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .speed-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .speed-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      background: var(--clay-light);
+      border: 1.5px solid var(--border-color);
+      border-radius: 5px;
+      font-family: Georgia, serif;
+    }
+
+    .speed-btn.active {
+      background: var(--terracotta);
+      color: #fff;
+    }
+
+    .mode-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 4px;
+      border: 1.5px solid var(--border-color);
+      background: var(--clay-light);
+    }
+
+    .mode-badge.dry {
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .mode-badge.real {
+      background: var(--terracotta);
+      color: #fff;
+    }
+
+    /* PREVIEW & HISTORY TABLES */
+    .table-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    th {
+      background: var(--clay-light);
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--border-color);
+      font-weight: bold;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover {
+      background: rgba(201, 117, 74, 0.08);
+    }
+
+    .chip-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1px solid var(--border-color);
+    }
+
+    .chip-move { background: var(--teal); color: #fff; }
+    .chip-skip { background: #dfcfab; color: var(--clay-dark); }
+    .chip-review { background: #df8b5e; color: #fff; }
+
+    /* HISTORY LIST */
+    .history-run {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .history-header {
+      padding: 12px 18px;
+      background: var(--clay-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .history-body {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .empty-state {
+      padding: 36px;
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1 id="appTitle">Downloads Janitor</h1>
+      <span class="tagline">The animation is the explanation.</span>
+    </div>
+    <div class="header-actions">
+      <span class="stats-pill" id="statsFilesSorted">Files sorted: 0</span>
+      <span class="stats-pill" id="statsLastRun">Last run: None</span>
+      <button class="clay-btn outline" id="btnThemeToggle" onclick="toggleTheme()">Dark Mode</button>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" id="tabFloor" onclick="switchTab('floor')">The Floor</button>
+    <button class="tab-btn" id="tabPreview" onclick="switchTab('preview')">Preview</button>
+    <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">History</button>
+  </nav>
+
+  <main>
+    <!-- Folder Switcher Bar -->
+    <div class="dir-bar">
+      <div class="dir-info">
+        <span class="dir-label">ACTIVE FOLDER:</span>
+        <span id="currentDirPath" class="dir-path" title="Current folder being sorted">Loading...</span>
+      </div>
+      <div class="dir-actions">
+        <button class="clay-btn small outline" onclick="switchFolder('C:\\\\Users\\\\ADMIN\\\\Downloads')">My Downloads</button>
+        <button class="clay-btn small outline" onclick="switchFolder('browser_test_downloads')">Test Folder</button>
+        <input type="text" id="customDirInput" placeholder="Path to folder..." class="dir-input" />
+        <button class="clay-btn small teal" onclick="applyCustomDir()">Set Folder</button>
+      </div>
+    </div>
+
+    <!-- 1. THE FLOOR -->
+    <section id="screenFloor" class="screen active">
+      <div class="stage-container">
+        <div id="speechBubble" class="speech-bubble"></div>
+        <svg id="floorSvg" viewBox="0 0 1000 440">
+          <defs>
+            <!-- Clay wobble filter -->
+            <filter id="clayWobble" x="-10%" y="-10%" width="120%" height="120%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+
+          <!-- Floor Line -->
+          <line x1="0" y1="360" x2="1000" y2="360" stroke="#4a2f20" stroke-width="4" stroke-linecap="round" />
+          <line x1="0" y1="366" x2="1000" y2="366" stroke="#c9754a" stroke-width="2" stroke-dasharray="10 6" opacity="0.5" />
+
+          <!-- Left Pile: The File Chips -->
+          <g id="filePileGroup" transform="translate(40, 270)" filter="url(#clayWobble)">
+            <!-- Base pile box / stack -->
+            <rect x="0" y="55" width="85" height="35" rx="6" fill="#b96a40" stroke="#4a2f20" stroke-width="2.5" />
+            <text x="42" y="78" font-family="Georgia" font-size="12" fill="#fff" font-weight="bold" text-anchor="middle">PILE</text>
+            <!-- Dynamically rendered pile chips -->
+            <g id="pileChips"></g>
+            <!-- Wait sign (skipped files) -->
+            <g id="waitSign" opacity="0" transform="translate(90, 25)">
+              <rect x="0" y="0" width="38" height="24" rx="4" fill="#df8b5e" stroke="#4a2f20" stroke-width="1.8" />
+              <line x1="19" y1="24" x2="19" y2="60" stroke="#4a2f20" stroke-width="2.5" />
+              <text x="19" y="16" font-family="Georgia" font-size="10" fill="#fff" font-weight="bold" text-anchor="middle">WAIT</text>
+            </g>
+            <!-- Review Question Stack -->
+            <g id="reviewStack" opacity="0" transform="translate(10, 10)">
+              <circle cx="20" cy="20" r="14" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+              <text x="20" y="26" font-family="Georgia" font-size="18" fill="#fff" font-weight="bold" text-anchor="middle">?</text>
+            </g>
+          </g>
+
+          <!-- Row of 9 Destination Bins along the floor -->
+          <!-- Categories: Screenshots, WhatsApp, Installers, Documents, Pictures, Videos, Audio, Archives, Duplicates -->
+          <g id="binsRow"></g>
+
+          <!-- Potted Sprout at Far Right -->
+          <g id="pottedSprout" transform="translate(945, 305)" filter="url(#clayWobble)">
+            <!-- Clay Pot -->
+            <path d="M4 32 L8 55 L32 55 L36 32 Z" fill="#c9754a" stroke="#4a2f20" stroke-width="2.5" />
+            <ellipse cx="20" cy="32" rx="17" ry="5" fill="#4a2f20" />
+            <!-- Sprout Plant (Grows with files sorted) -->
+            <g id="sproutPlant" transform="scale(1, 1)">
+              <path id="sproutStem" d="M20 32 Q20 18 24 6" stroke="#4a2f20" stroke-width="2.5" fill="none" stroke-linecap="round" />
+              <path id="sproutLeaf" d="M24 6 C35 -2 36 14 25 8 C20 4 18 -4 24 6" fill="#6f9a8a" stroke="#4a2f20" stroke-width="1.8" />
+            </g>
+          </g>
+
+          <!-- Dotted Trail for Dry Run -->
+          <path id="ghostTrail" d="" fill="none" stroke="#6f9a8a" stroke-width="2" stroke-dasharray="5 5" opacity="0" />
+
+          <!-- ROBOT RIG ROOT -->
+          <g id="botRig" transform="translate(160, 220)">
+            <ellipse id="botShadow" cx="30" cy="140" rx="36" ry="7" fill="#4a2f20" opacity="0.25" />
+
+            <!-- Legs -->
+            <g id="legL" transform="translate(14, 105)">
+              <rect x="0" y="0" width="14" height="34" rx="6" fill="#b96a40" stroke="#4a2f20" stroke-width="2.5" filter="url(#clayWobble)" />
+              <path d="M-2 26 C-2 36 16 36 16 34 L16 26 Z" fill="#5b8073" stroke="#4a2f20" stroke-width="2" />
+            </g>
+            <g id="legR" transform="translate(32, 105)">
+              <rect x="0" y="0" width="14" height="34" rx="6" fill="#c9754a" stroke="#4a2f20" stroke-width="2.5" filter="url(#clayWobble)" />
+              <path d="M-2 26 C-2 36 16 36 16 34 L16 26 Z" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+            </g>
+
+            <!-- Arm Left (behind) -->
+            <g id="armL" transform="translate(6, 60)">
+              <circle cx="0" cy="0" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+              <path id="armLimbL" d="M0 0 L-6 24 L10 32" fill="none" stroke="#b96a40" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+              <circle id="handL" cx="10" cy="32" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+            </g>
+
+            <!-- Robot Body Group (rb) -->
+            <g id="rb" transform="translate(0, 0)">
+              <rect x="4" y="52" width="52" height="54" rx="12" fill="#c9754a" stroke="#4a2f20" stroke-width="3" filter="url(#clayWobble)" />
+              <!-- Patina wash -->
+              <path d="M8 58 Q18 64 24 54 Q32 62 48 58 L48 70 Q34 76 20 68 Q10 74 8 70 Z" fill="#6f9a8a" opacity="0.65" />
+              <path d="M12 90 Q22 84 36 94 Q44 88 52 92 L52 102 Q38 106 20 102 Z" fill="#5b8073" opacity="0.5" />
+              <!-- Wire staples -->
+              <path d="M16 94 L16 102 M22 94 L22 102" stroke="#4a2f20" stroke-width="2" stroke-linecap="round" />
+              <!-- Chest screws -->
+              <circle cx="42" cy="74" r="5" fill="#7faaa0" stroke="#4a2f20" stroke-width="1.8" />
+              <circle cx="30" cy="78" r="3.5" fill="#df8b5e" stroke="#4a2f20" stroke-width="1.5" />
+              <circle cx="42" cy="88" r="4" fill="#a85e35" stroke="#4a2f20" stroke-width="1.5" />
+              <line x1="39" y1="88" x2="45" y2="88" stroke="#4a2f20" stroke-width="1.5" />
+
+              <!-- Neck collar -->
+              <rect x="20" y="46" width="20" height="8" rx="3" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+
+              <!-- Head Group (ra) -->
+              <g id="ra" transform="translate(0, 0)">
+                <rect x="0" y="0" width="60" height="48" rx="14" fill="#c9754a" stroke="#4a2f20" stroke-width="3" filter="url(#clayWobble)" />
+                <path d="M6 8 Q20 18 36 6 Q48 16 54 8 L54 18 Q36 24 18 16 Z" fill="#6f9a8a" opacity="0.6" />
+                <path d="M10 38 Q24 32 40 42 L52 40 Q40 46 20 44 Z" fill="#6f9a8a" opacity="0.5" />
+                <rect x="-6" y="18" width="6" height="10" rx="2" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+                <rect x="60" y="18" width="6" height="10" rx="2" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+                <!-- Mismatched Eyes -->
+                <circle cx="20" cy="24" r="11" fill="#df8b5e" stroke="#4a2f20" stroke-width="2" />
+                <circle cx="20" cy="24" r="8" fill="#fffdec" stroke="#4a2f20" stroke-width="1.5" />
+                <circle id="pupilL" cx="21" cy="24" r="4" fill="#4a2f20" />
+                <circle cx="19" cy="22" r="1.5" fill="#fff" />
+                <circle cx="43" cy="24" r="8" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+                <circle id="pupilR" cx="43" cy="24" r="3.5" fill="#4a2f20" />
+                <circle cx="41.5" cy="22.5" r="1" fill="#fff" />
+                <!-- Mouth -->
+                <ellipse cx="32" cy="38" rx="3.5" ry="2" fill="#4a2f20" />
+
+                <!-- Antenna Group (ant) -->
+                <g id="ant" transform="translate(30, 0)">
+                  <ellipse cx="0" cy="0" rx="7" ry="3" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+                  <path id="springAnt" d="M0 0 Q-6 -6 0 -12 Q6 -18 0 -24 Q-5 -28 0 -34" fill="none" stroke="#4a2f20" stroke-width="2.5" stroke-linecap="round" />
+                  <circle cx="0" cy="-36" r="4.5" fill="#c9754a" stroke="#4a2f20" stroke-width="2" />
+                </g>
+              </g>
+            </g>
+
+            <!-- Arm Right (front) -->
+            <g id="armR" transform="translate(54, 60)">
+              <circle cx="0" cy="0" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+              <path id="armLimbR" d="M0 0 L12 24 L22 30" fill="none" stroke="#c9754a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+              <circle id="handR" cx="22" cy="30" r="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2" />
+            </g>
+
+            <!-- File Chip carried by robot (file group) -->
+            <g id="file" transform="translate(30, 75)" opacity="0" filter="url(#clayWobble)">
+              <rect id="carriedChipBg" x="-20" y="-12" width="60" height="24" rx="5" fill="#fff8eb" stroke="#4a2f20" stroke-width="2" />
+              <rect x="-16" y="-8" width="12" height="16" rx="2" fill="#6f9a8a" />
+              <text id="carriedChipText" x="2" y="4" font-family="Georgia" font-size="9" fill="#4a2f20" font-weight="bold">FILE.EXT</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Controls & Status bar -->
+      <div class="floor-controls">
+        <div class="floor-actions-left">
+          <button class="clay-btn teal" id="btnDryRun" onclick="startFloorDryRun()">Dry Run</button>
+          <button class="clay-btn" id="btnRunNow" onclick="startFloorRealRun()">Run Now</button>
+          <button class="clay-btn outline" id="btnSkipAnim" onclick="skipCurrentAnimation()">Skip</button>
+          <button class="clay-btn outline" id="btnResetFloor" onclick="resetFloor()">Reset</button>
+          <span id="floorModeBadge" class="mode-badge">Idle</span>
+          <span id="floorStatusMsg" style="font-size: 13px; font-style: italic;">Ready to sweep.</span>
+        </div>
+        <div class="speed-controls">
+          <span>Speed:</span>
+          <button class="speed-btn active" id="spd1" onclick="setSpeed(1)">1x</button>
+          <button class="speed-btn" id="spd4" onclick="setSpeed(4)">4x</button>
+          <button class="speed-btn" id="spd10" onclick="setSpeed(10)">10x</button>
+          <button class="speed-btn" id="spdInst" onclick="setSpeed(999)">Instant</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PREVIEW -->
+    <section id="screenPreview" class="screen">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="font-size: 20px;">Planned Moves</h2>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <span id="previewStats" style="font-size: 14px; color: var(--text-muted);">0 files selected</span>
+          <button class="clay-btn" id="btnApplySelected" onclick="applySelectedPreview()">Apply Selected</button>
+        </div>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)" checked></th>
+              <th>File</th>
+              <th>Action</th>
+              <th>Destination</th>
+              <th>Rule Matched</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="previewTableBody">
+            <tr><td colspan="6" class="empty-state">Loading plan...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. HISTORY -->
+    <section id="screenHistory" class="screen">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="font-size: 20px;">Run History</h2>
+        <button class="clay-btn outline" onclick="loadHistory()">Refresh Journal</button>
+      </div>
+      <div id="historyContainer">
+        <div class="empty-state">No recorded runs yet. Clean floor.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // System State
+    const BINS_DATA = [
+      { id: "Screenshots", label: "Screenshots", x: 220 },
+      { id: "WhatsApp", label: "WhatsApp", x: 300 },
+      { id: "Installers", label: "Installers", x: 380 },
+      { id: "Documents", label: "Documents", x: 460 },
+      { id: "Pictures", label: "Pictures", x: 540 },
+      { id: "Videos", label: "Videos", x: 620 },
+      { id: "Audio", label: "Audio", x: 700 },
+      { id: "Archives", label: "Archives", x: 780 },
+      { id: "Duplicates", label: "Duplicates", x: 860 }
+    ];
+
+    let currentPlan = [];
+    let currentBins = {};
+    let animationSpeedMultiplier = 1;
+    let isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let skipRequested = false;
+    let isAnimating = false;
+    let totalFilesSortedCounter = 0;
+
+    // Robot Rig State (lifted from assets/janitor_bot.html)
+    const rigState = {
+      botX: 160,
+      botY: 220,
+      headAngle: 0,
+      headY: 0,
+      antennaAngle: 0,
+      antennaScaleY: 1,
+      legLAngle: 0,
+      legRAngle: 0,
+      armLAngle: 0,
+      armRAngle: 0,
+      fileVisible: false,
+      fileX: 30,
+      fileY: 75,
+      fileOpacity: 1,
+      isDryRun: false,
+      carriedText: ""
+    };
+
+    // DOM References
+    const botRig = document.getElementById('botRig');
+    const rb = document.getElementById('rb');
+    const ra = document.getElementById('ra');
+    const ant = document.getElementById('ant');
+    const legL = document.getElementById('legL');
+    const legR = document.getElementById('legR');
+    const armL = document.getElementById('armL');
+    const armR = document.getElementById('armR');
+    const fileGroup = document.getElementById('file');
+    const carriedChipText = document.getElementById('carriedChipText');
+    const speechBubble = document.getElementById('speechBubble');
+    const ghostTrail = document.getElementById('ghostTrail');
+    const sproutPlant = document.getElementById('sproutPlant');
+    const waitSign = document.getElementById('waitSign');
+    const reviewStack = document.getElementById('reviewStack');
+    const pileChips = document.getElementById('pileChips');
+    const binsRow = document.getElementById('binsRow');
+
+    // Build the Bins in the SVG
+    function buildBins() {
+      binsRow.innerHTML = '';
+      BINS_DATA.forEach(b => {
+        const binGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        binGroup.setAttribute("id", "bin_" + b.id);
+        binGroup.setAttribute("transform", `translate(${b.x}, 275)`);
+        binGroup.setAttribute("filter", "url(#clayWobble)");
+
+        binGroup.innerHTML = `
+          <!-- Bin back -->
+          <rect x="0" y="10" width="70" height="85" rx="7" fill="#5b8073" stroke="#4a2f20" stroke-width="2.5" />
+          <!-- Bin front -->
+          <rect x="0" y="26" width="70" height="69" rx="5" fill="#6f9a8a" stroke="#4a2f20" stroke-width="2.5" />
+          <!-- Rim -->
+          <rect x="-3" y="20" width="76" height="10" rx="3" fill="#7faaa0" stroke="#4a2f20" stroke-width="2" />
+          <!-- Text -->
+          <text x="35" y="52" font-family="Georgia" font-size="9" fill="#4a2f20" font-weight="bold" text-anchor="middle">${b.label.toUpperCase()}</text>
+          <text id="count_${b.id}" x="35" y="74" font-family="Georgia" font-size="14" fill="#4a2f20" font-weight="bold" text-anchor="middle">0</text>
+          <text id="plus_${b.id}" x="35" y="18" font-family="Georgia" font-size="14" fill="#c9754a" font-weight="bold" text-anchor="middle" opacity="0">+1</text>
+        `;
+        binsRow.appendChild(binGroup);
+      });
+    }
+
+    // Tween Helper with safety timer and visibility awareness
+    function tween(duration, onUpdate) {
+      if (isReducedMotion || animationSpeedMultiplier >= 999 || skipRequested) {
+        onUpdate(1, 1);
+        renderRig();
+        return Promise.resolve();
+      }
+      const actualDuration = duration / animationSpeedMultiplier;
+      const startTime = performance.now();
+      return new Promise((resolve) => {
+        let done = false;
+        const safetyTimer = setTimeout(() => {
+          if (!done) {
+            done = true;
+            onUpdate(1, 1);
+            renderRig();
+            resolve();
+          }
+        }, actualDuration + 200);
+
+        function step(now) {
+          if (done) return;
+          if (skipRequested || document.hidden) {
+            done = true;
+            clearTimeout(safetyTimer);
+            onUpdate(1, 1);
+            renderRig();
+            resolve();
+            return;
+          }
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / actualDuration);
+          const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          onUpdate(ease, t);
+          renderRig();
+          if (t < 1) {
+            requestAnimationFrame(step);
+          } else {
+            done = true;
+            clearTimeout(safetyTimer);
+            resolve();
+          }
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    // Render Rig
+    function renderRig() {
+      botRig.setAttribute('transform', `translate(${rigState.botX}, ${rigState.botY})`);
+      botRig.style.opacity = rigState.isDryRun ? '0.5' : '1.0';
+
+      ra.setAttribute('transform', `translate(0, ${rigState.headY}) rotate(${rigState.headAngle}, 30, 24)`);
+      ant.setAttribute('transform', `translate(30, 0) rotate(${rigState.antennaAngle}) scale(1, ${rigState.antennaScaleY})`);
+
+      legL.setAttribute('transform', `translate(14, 105) rotate(${rigState.legLAngle}, 7, 0)`);
+      legR.setAttribute('transform', `translate(32, 105) rotate(${rigState.legRAngle}, 7, 0)`);
+
+      armL.setAttribute('transform', `translate(6, 60) rotate(${rigState.armLAngle}, 0, 0)`);
+      armR.setAttribute('transform', `translate(54, 60) rotate(${rigState.armRAngle}, 0, 0)`);
+
+      if (rigState.fileVisible) {
+        fileGroup.style.opacity = rigState.fileOpacity;
+        fileGroup.setAttribute('transform', `translate(${rigState.fileX}, ${rigState.fileY})`);
+        carriedChipText.textContent = rigState.carriedText.length > 9 ? rigState.carriedText.substring(0, 8) + '..' : rigState.carriedText;
+      } else {
+        fileGroup.style.opacity = '0';
+      }
+
+      // Speech bubble follows robot
+      if (speechBubble.style.opacity === '1') {
+        const svgBox = document.getElementById('floorSvg').getBoundingClientRect();
+        const stageBox = document.querySelector('.stage-container').getBoundingClientRect();
+        const scaleX = svgBox.width / 1000;
+        const scaleY = svgBox.height / 440;
+        
+        speechBubble.style.left = Math.max(10, Math.min(stageBox.width - 290, (rigState.botX - 20) * scaleX)) + 'px';
+        speechBubble.style.top = Math.max(10, (rigState.botY - 45) * scaleY) + 'px';
+      }
+    }
+
+    function showSpeech(text) {
+      speechBubble.textContent = text;
+      speechBubble.style.opacity = '1';
+      renderRig();
+    }
+
+    function hideSpeech() {
+      speechBubble.style.opacity = '0';
+    }
+
+    // Sprout Growth (progress indicator)
+    function updateSprout(progressRatio) {
+      const scale = 1.0 + Math.min(1.8, progressRatio * 1.5);
+      sproutPlant.setAttribute('transform', `scale(${scale})`);
+    }
+
+    // Update bin counters
+    function updateBinCounts(counts) {
+      currentBins = counts || currentBins;
+      BINS_DATA.forEach(b => {
+        const el = document.getElementById('count_' + b.id);
+        if (el) el.textContent = currentBins[b.id] || 0;
+      });
+    }
+
+    // Refresh Visual Pile
+    function renderVisualPile(items) {
+      pileChips.innerHTML = '';
+      const moveItems = items.filter(i => i.action === 'move');
+      const maxDisplay = Math.min(8, moveItems.length);
+      for (let i = 0; i < maxDisplay; i++) {
+        const item = moveItems[i];
+        const chip = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        chip.setAttribute("transform", `translate(${i * 3}, ${40 - i * 6})`);
+        chip.innerHTML = `
+          <rect x="0" y="0" width="70" height="18" rx="4" fill="#fff8eb" stroke="#4a2f20" stroke-width="1.5" />
+          <text x="6" y="13" font-family="Georgia" font-size="8" fill="#4a2f20" font-weight="bold">${item.file.substring(0, 10)}</text>
+        `;
+        pileChips.appendChild(chip);
+      }
+    }
+
+    // Robot Move 1: Pick Up
+    async function botPickUp(filename) {
+      rigState.carriedText = filename;
+      showSpeech(`Picking up ${filename}`);
+      
+      await tween(300, (e) => {
+        rigState.botY = 220 + e * 18;
+        rigState.headAngle = e * 12;
+        rigState.headY = e * 5;
+        rigState.armRAngle = -e * 45;
+        rigState.armLAngle = e * 35;
+        rigState.legLAngle = -e * 15;
+        rigState.legRAngle = e * 15;
+      });
+
+      rigState.fileVisible = true;
+      rigState.fileOpacity = 1;
+      rigState.fileX = 40;
+      rigState.fileY = 85;
+
+      await tween(250, (e) => {
+        rigState.botY = 238 - e * 18;
+        rigState.headAngle = 12 - e * 12;
+        rigState.headY = 5 - e * 5;
+        rigState.armRAngle = -45 + e * 20;
+        rigState.armLAngle = 35 - e * 35;
+        rigState.legLAngle = -15 + e * 15;
+        rigState.legRAngle = 15 - e * 15;
+        rigState.fileY = 85 - e * 10;
+      });
+      hideSpeech();
+    }
+
+    // Robot Move 2: Carry
+    async function botCarry(targetX, reason, isDuplicate = false) {
+      showSpeech(reason);
+      const startX = rigState.botX;
+      const dist = targetX - startX;
+      const steps = Math.max(4, Math.round(Math.abs(dist) / 50));
+      const duration = Math.min(1200, Math.max(400, Math.abs(dist) * 1.8));
+
+      // Dotted trail if dry run
+      if (rigState.isDryRun) {
+        ghostTrail.setAttribute('d', `M${startX} 340 L${targetX} 340`);
+        ghostTrail.style.opacity = '0.8';
+      } else {
+        ghostTrail.style.opacity = '0';
+      }
+
+      await tween(duration, (e, t) => {
+        rigState.botX = startX + dist * e;
+        const cycle = Math.sin(t * Math.PI * steps);
+        rigState.botY = 220 + Math.abs(Math.sin(t * Math.PI * steps * 2)) * 4;
+        rigState.legLAngle = cycle * 20;
+        rigState.legRAngle = -cycle * 20;
+        rigState.armLAngle = -cycle * 18;
+        rigState.armRAngle = -25 + cycle * 10;
+        rigState.antennaAngle = Math.cos(t * Math.PI * steps) * 10;
+
+        // Duplicate mid-carry hesitation
+        if (isDuplicate && t > 0.45 && t < 0.65) {
+          rigState.antennaAngle = Math.sin(t * 30) * 20;
+        }
+      });
+
+      rigState.legLAngle = 0;
+      rigState.legRAngle = 0;
+      rigState.armLAngle = 0;
+      rigState.armRAngle = -20;
+      rigState.antennaAngle = 0;
+      renderRig();
+    }
+
+    // Robot Move 3: Put In
+    async function botPutIn(category) {
+      const binObj = BINS_DATA.find(b => b.id.toLowerCase() === (category || '').toLowerCase()) || BINS_DATA[0];
+      const targetCategory = binObj.id;
+
+      // Lift file
+      await tween(200, (e) => {
+        rigState.armRAngle = -20 - e * 35;
+        rigState.fileY = 75 - e * 25;
+        rigState.fileX = 40 + e * 15;
+      });
+
+      // Drop behind bin front
+      await tween(200, (e) => {
+        rigState.fileY = 50 + e * 55;
+        rigState.fileOpacity = 1 - e;
+      });
+      rigState.fileVisible = false;
+
+      // Shake bin and show +1
+      const binEl = document.getElementById('bin_' + targetCategory);
+      const plusEl = document.getElementById('plus_' + targetCategory);
+      const countEl = document.getElementById('count_' + targetCategory);
+
+      if (binEl && countEl && plusEl) {
+        const bx = binObj.x;
+        
+        // Always increment visually (both dry and real)
+        currentBins[targetCategory] = (currentBins[targetCategory] || 0) + 1;
+        countEl.textContent = currentBins[targetCategory];
+
+        plusEl.style.opacity = '1';
+        plusEl.setAttribute('y', '18');
+
+        await tween(350, (e) => {
+          const shake = Math.sin(e * Math.PI * 6) * (1 - e) * 5;
+          binEl.setAttribute('transform', `translate(${bx + shake}, 275)`);
+          plusEl.setAttribute('y', 18 - e * 22);
+          plusEl.style.opacity = 1 - e;
+          rigState.armRAngle = -55 + e * 35;
+        });
+
+        binEl.setAttribute('transform', `translate(${bx}, 275)`);
+        plusEl.style.opacity = '0';
+      }
+
+      hideSpeech();
+      ghostTrail.style.opacity = '0';
+      renderRig();
+    }
+
+    // Walk back to Pile
+    async function botWalkTo(targetX = 160) {
+      const startX = rigState.botX;
+      const dist = targetX - startX;
+      const duration = Math.min(800, Math.max(300, Math.abs(dist) * 1.4));
+      const steps = Math.max(3, Math.round(Math.abs(dist) / 60));
+
+      await tween(duration, (e, t) => {
+        rigState.botX = startX + dist * e;
+        const cycle = Math.sin(t * Math.PI * steps);
+        rigState.legLAngle = cycle * 18;
+        rigState.legRAngle = -cycle * 18;
+      });
+      rigState.legLAngle = 0;
+      rigState.legRAngle = 0;
+      renderRig();
+    }
+
+    // Reverse Sequence for Undo
+    async function botPlayUndoMove(destCategory, filename) {
+      const binObj = BINS_DATA.find(b => b.id === destCategory) || BINS_DATA[0];
+      const targetBinX = binObj.x - 30;
+
+      // 1. Walk backward to bin
+      showSpeech(`Reversing ${filename}`);
+      await botWalkTo(targetBinX);
+
+      // 2. Take file out of bin
+      await tween(200, (e) => {
+        rigState.armRAngle = -20 - e * 35;
+      });
+      rigState.fileVisible = true;
+      rigState.fileOpacity = 1;
+      rigState.carriedText = filename;
+      rigState.fileX = 55;
+      rigState.fileY = 105;
+
+      await tween(250, (e) => {
+        rigState.fileY = 105 - e * 40;
+        rigState.armRAngle = -55 + e * 35;
+      });
+
+      // Bin count decrements
+      if (currentBins[destCategory] > 0) {
+        currentBins[destCategory] -= 1;
+        updateBinCounts();
+      }
+
+      // 3. Carry back to pile
+      await botCarry(160, `Returning ${filename} to pile`);
+
+      // 4. Place back on pile
+      await tween(200, (e) => {
+        rigState.fileY = 65 + e * 30;
+        rigState.fileOpacity = 1 - e;
+      });
+      rigState.fileVisible = false;
+      hideSpeech();
+    }
+
+    // Play Entire Plan Animation
+    async function playFloorPlanAnimation(itemsToAnimate, isDryRun = true) {
+      if (isAnimating) return;
+      isAnimating = true;
+      skipRequested = false;
+
+      rigState.isDryRun = isDryRun;
+      const modeBadge = document.getElementById('floorModeBadge');
+      const statusMsg = document.getElementById('floorStatusMsg');
+      modeBadge.className = 'mode-badge ' + (isDryRun ? 'dry' : 'real');
+      modeBadge.textContent = isDryRun ? 'DRY RUN' : 'REAL RUN';
+      statusMsg.textContent = isDryRun ? 'walkthrough, no files touched' : 'Moving files live...';
+
+      let processedCount = 0;
+      const totalMoves = itemsToAnimate.filter(i => i.action === 'move').length;
+
+      for (let i = 0; i < itemsToAnimate.length; i++) {
+        if (skipRequested) {
+          statusMsg.textContent = isDryRun ? "Skipped animation (showing final counts)..." : "Fast-forwarding remaining moves...";
+          const remaining = itemsToAnimate.slice(i);
+          for (const rem of remaining) {
+            if (rem.action === 'move') {
+              if (!isDryRun) {
+                try {
+                  await fetch('/api/apply_single', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      file: rem.file,
+                      dest: rem.dest,
+                      rule: rem.rule,
+                      reason: rem.reason,
+                      sha256: rem.sha256 || ''
+                    })
+                  });
+                } catch (e) {}
+              }
+              const cat = rem.dest.replace(/\\/g, '/').split('/')[0];
+              const b = BINS_DATA.find(x => x.id.toLowerCase() === cat.toLowerCase()) || BINS_DATA[0];
+              currentBins[b.id] = (currentBins[b.id] || 0) + 1;
+              const countEl = document.getElementById('count_' + b.id);
+              if (countEl) countEl.textContent = currentBins[b.id];
+              totalFilesSortedCounter++;
+              processedCount++;
+            }
+          }
+          updateSprout(1.0);
+          document.getElementById('statsFilesSorted').textContent = `Files sorted: ${totalFilesSortedCounter}`;
+          break;
+        }
+
+        const item = itemsToAnimate[i];
+
+        // Auto fast-forward after 6 files if speed is 1x
+        if (processedCount >= 6 && animationSpeedMultiplier === 1) {
+          setSpeed(4);
+        }
+
+        if (item.action === 'skip') {
+          waitSign.style.opacity = '1';
+          showSpeech(`Skipped: ${item.reason}`);
+          await tween(400, (e) => {
+            rigState.headAngle = Math.sin(e * Math.PI * 4) * 8;
+          });
+          waitSign.style.opacity = '0';
+          hideSpeech();
+          continue;
+        }
+
+        if (item.action === 'review') {
+          reviewStack.style.opacity = '1';
+          showSpeech(`Needs review: ${item.reason}`);
+          await tween(400, (e) => {
+            rigState.headAngle = e * 20;
+          });
+          await tween(200, (e) => {
+            rigState.headAngle = 20 - e * 20;
+          });
+          reviewStack.style.opacity = '0';
+          hideSpeech();
+          continue;
+        }
+
+        if (item.action === 'move') {
+          processedCount++;
+          // 1. Pick up
+          await botPickUp(item.file);
+
+          const category = item.dest.replace(/\\/g, '/').split('/')[0];
+          const binObj = BINS_DATA.find(b => b.id.toLowerCase() === category.toLowerCase()) || BINS_DATA[0];
+          const isDup = item.rule && item.rule.includes("Duplicates");
+
+          // 2. Carry
+          await botCarry(binObj.x - 30, item.reason, isDup);
+
+          // 3. Put in: If real run, execute single file live via API before dropping
+          if (!isDryRun) {
+            try {
+              const resp = await fetch('/api/apply_single', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  file: item.file,
+                  dest: item.dest,
+                  rule: item.rule,
+                  reason: item.reason,
+                  sha256: item.sha256 || ''
+                })
+              });
+              const resData = await resp.json();
+              if (resData.errors && resData.errors.length > 0) {
+                showSpeech("Error: " + resData.errors[0]);
+                await tween(500, (e) => {
+                  rigState.armLAngle = e * 40;
+                  rigState.armRAngle = -20 + e * 40;
+                });
+                rigState.armLAngle = 0;
+                rigState.armRAngle = 0;
+                await botWalkTo(160);
+                rigState.fileVisible = false;
+                renderRig();
+                continue;
+              }
+            } catch (err) {
+              console.error('apply_single error:', err);
+              showSpeech("Move failed: " + (err.message || 'network error'));
+              rigState.fileVisible = false;
+              await botWalkTo(160);
+              renderRig();
+              continue;
+            }
+          }
+
+          await botPutIn(category);
+          updateSprout(processedCount / Math.max(1, totalMoves));
+          totalFilesSortedCounter++;
+          document.getElementById('statsFilesSorted').textContent = `Files sorted: ${totalFilesSortedCounter}`;
+
+          // Walk back to pile for next file
+          await botWalkTo(160);
+        }
+      }
+
+      // Finish sequence
+      rigState.isDryRun = false;
+      rigState.botX = 160;
+      rigState.botY = 220;
+      rigState.armLAngle = 0;
+      rigState.armRAngle = 0;
+      rigState.legLAngle = 0;
+      rigState.legRAngle = 0;
+      rigState.fileVisible = false;
+      renderRig();
+      
+      if (isDryRun) {
+        statusMsg.textContent = `Dry run complete (${processedCount} moves previewed). Floor intact.`;
+      } else {
+        try { await fetch('/api/finish_run', { method: 'POST' }); } catch(e) {}
+        statusMsg.textContent = `Sweep complete (${processedCount} files sorted). All clean.`;
+        await refreshStats();
+        await loadPlan();
+      }
+      
+      isAnimating = false;
+      skipRequested = false;
+    }
+
+    // Start Dry Run from button
+    async function startFloorDryRun() {
+      if (isAnimating) return;
+      await loadPlan();
+      if (!currentPlan || currentPlan.filter(i => i.action === 'move').length === 0) {
+        const statusMsg = document.getElementById('floorStatusMsg');
+        if (statusMsg) statusMsg.textContent = "Nothing to sweep. Pile is empty!";
+        return;
+      }
+      playFloorPlanAnimation(currentPlan, true);
+    }
+
+    // Start Real Run from button
+    async function startFloorRealRun() {
+      if (isAnimating) return;
+      await loadPlan();
+      if (!currentPlan || currentPlan.filter(i => i.action === 'move').length === 0) {
+        const statusMsg = document.getElementById('floorStatusMsg');
+        if (statusMsg) statusMsg.textContent = "Nothing to sweep. Pile is empty!";
+        return;
+      }
+      playFloorPlanAnimation(currentPlan, false);
+    }
+
+    function skipCurrentAnimation() {
+      skipRequested = true;
+    }
+
+    async function resetFloor() {
+      skipRequested = true;
+      isAnimating = false;
+      rigState.botX = 160;
+      rigState.botY = 220;
+      rigState.headAngle = 0;
+      rigState.headY = 0;
+      rigState.armLAngle = 0;
+      rigState.armRAngle = 0;
+      rigState.legLAngle = 0;
+      rigState.legRAngle = 0;
+      rigState.fileVisible = false;
+      rigState.isDryRun = false;
+      renderRig();
+      document.getElementById('floorModeBadge').className = 'mode-badge';
+      document.getElementById('floorModeBadge').textContent = 'Idle';
+      document.getElementById('floorStatusMsg').textContent = 'Ready to sweep.';
+      await loadPlan();
+      await refreshStats();
+    }
+
+    function setSpeed(spd) {
+      animationSpeedMultiplier = spd;
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      if (spd === 1) {
+        const el = document.getElementById('spd1');
+        if (el) el.classList.add('active');
+      } else if (spd === 4) {
+        const el = document.getElementById('spd4');
+        if (el) el.classList.add('active');
+      } else if (spd === 10) {
+        const el = document.getElementById('spd10');
+        if (el) el.classList.add('active');
+      } else {
+        const el = document.getElementById('spdInst');
+        if (el) el.classList.add('active');
+      }
+    }
+
+    async function switchFolder(dirPath) {
+      if (isAnimating) {
+        alert("Animation in progress. Please wait or click Skip.");
+        return;
+      }
+      try {
+        const resp = await fetch('/api/set_dir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dir: dirPath })
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          await loadPlan();
+          await refreshStats();
+          const statusMsg = document.getElementById('floorStatusMsg');
+          if (statusMsg) statusMsg.textContent = `Target set to: ${data.target_dir}`;
+        } else {
+          alert(data.error || "Failed to switch folder");
+        }
+      } catch (e) {
+        alert("Error connecting to server");
+      }
+    }
+
+    function applyCustomDir() {
+      const val = document.getElementById('customDirInput').value.trim();
+      if (val) switchFolder(val);
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      document.getElementById('btnThemeToggle').textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    }
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+      if (tabId === 'floor') {
+        document.getElementById('tabFloor').classList.add('active');
+        document.getElementById('screenFloor').classList.add('active');
+      } else if (tabId === 'preview') {
+        document.getElementById('tabPreview').classList.add('active');
+        document.getElementById('screenPreview').classList.add('active');
+        renderPreviewTable();
+      } else if (tabId === 'history') {
+        document.getElementById('tabHistory').classList.add('active');
+        document.getElementById('screenHistory').classList.add('active');
+        loadHistory();
+      }
+    }
+
+    // Load Plan from API
+    async function loadPlan() {
+      try {
+        const resp = await fetch('/api/plan');
+        const data = await resp.json();
+        currentPlan = data.plan || [];
+        if (data.target_dir) {
+          const dirEl = document.getElementById('currentDirPath');
+          if (dirEl) dirEl.textContent = data.target_dir;
+          const inp = document.getElementById('customDirInput');
+          if (inp && !inp.value) inp.value = data.target_dir;
+        }
+        updateBinCounts(data.bins);
+        renderVisualPile(currentPlan);
+        renderPreviewTable();
+        return currentPlan;
+      } catch (e) {
+        console.error("Failed to load plan", e);
+        return [];
+      }
+    }
+
+    // Render Preview Table
+    function renderPreviewTable() {
+      const tbody = document.getElementById('previewTableBody');
+      if (!tbody) return;
+
+      if (currentPlan.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nothing to sweep. Suspicious.</td></tr>`;
+        document.getElementById('previewStats').textContent = '0 files selected';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      currentPlan.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        const isMove = item.action === 'move';
+        const badgeClass = isMove ? 'chip-move' : (item.action === 'skip' ? 'chip-skip' : 'chip-review');
+
+        tr.innerHTML = `
+          <td><input type="checkbox" class="row-checkbox" data-file="${item.file}" ${isMove ? 'checked' : 'disabled'} onchange="updateSelectedCount()"></td>
+          <td><strong>${item.file}</strong></td>
+          <td><span class="chip-badge ${badgeClass}">${item.action.toUpperCase()}</span></td>
+          <td>${item.dest || '—'}</td>
+          <td>${item.rule}</td>
+          <td>${item.reason}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      updateSelectedCount();
+    }
+
+    function toggleSelectAll(checked) {
+      document.querySelectorAll('.row-checkbox:not(:disabled)').forEach(cb => cb.checked = checked);
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('.row-checkbox:checked').length;
+      document.getElementById('previewStats').textContent = `${checked} files selected`;
+    }
+
+    // Apply Selected from Preview
+    async function applySelectedPreview() {
+      const checkedBoxes = Array.from(document.querySelectorAll('.row-checkbox:checked'));
+      const selectedFiles = checkedBoxes.map(cb => cb.dataset.file);
+      if (selectedFiles.length === 0) {
+        alert("No files selected.");
+        return;
+      }
+
+      const itemsToRun = currentPlan.filter(i => selectedFiles.includes(i.file));
+      // Switch to floor and animate only those items
+      switchTab('floor');
+      playFloorPlanAnimation(itemsToRun, false);
+    }
+
+    // Load History from API
+    async function loadHistory() {
+      const container = document.getElementById('historyContainer');
+      try {
+        const resp = await fetch('/api/history');
+        const data = await resp.json();
+        const runs = data.runs || [];
+
+        if (runs.length === 0) {
+          container.innerHTML = `<div class="empty-state">No recorded runs yet. Clean floor.</div>`;
+          return;
+        }
+
+        container.innerHTML = '';
+        runs.slice().reverse().forEach((run, rIdx) => {
+          const runCard = document.createElement('div');
+          runCard.className = 'history-run';
+          const dt = new Date(run.timestamp).toLocaleString();
+
+          runCard.innerHTML = `
+            <div class="history-header" onclick="toggleRunExpand(${rIdx})">
+              <div>
+                <span>Run ${run.run_id}</span>
+                <span style="font-weight: normal; margin-left: 12px; font-size: 13px; color: var(--text-muted);">${dt}</span>
+                <span class="chip-badge chip-move" style="margin-left: 12px;">${run.moves.length} moves</span>
+              </div>
+              <button class="clay-btn outline" onclick="event.stopPropagation(); undoRun('${run.run_id}')">Undo this run</button>
+            </div>
+            <div class="history-body" id="runBody_${rIdx}">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Original</th>
+                    <th>Destination</th>
+                    <th>Rule</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${run.moves.map(m => `
+                    <tr>
+                      <td>${m.source}</td>
+                      <td>${m.destination}</td>
+                      <td>${m.rule}</td>
+                      <td><button class="clay-btn outline" style="padding: 3px 8px; font-size: 11px;" onclick="undoSingleFile('${m.destination}')">Undo</button></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+          container.appendChild(runCard);
+        });
+      } catch (e) {
+        container.innerHTML = `<div class="empty-state">Failed to read journal.</div>`;
+      }
+    }
+
+    function toggleRunExpand(idx) {
+      const body = document.getElementById('runBody_' + idx);
+      if (body) {
+        body.style.display = body.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    // Undo Entire Run
+    async function undoRun(runId) {
+      if (!confirm(`Undo run ${runId}?`)) return;
+      try {
+        const resp = await fetch('/api/undo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ run_id: runId })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          switchTab('floor');
+          // Play reverse animation for undone moves
+          for (const u of res.undone) {
+            const cat = u.source.split('/')[0];
+            await botPlayUndoMove(cat, u.original_source || u.destination);
+          }
+          await loadPlan();
+          loadHistory();
+          refreshStats();
+        } else {
+          alert("Undo failed: " + (res.message || "Unknown"));
+        }
+      } catch (e) {
+        alert("Error executing undo");
+      }
+    }
+
+    // Undo Single File
+    async function undoSingleFile(fileName) {
+      try {
+        const resp = await fetch('/api/undo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: fileName })
+        });
+        const res = await resp.json();
+        if (res.success && res.undone && res.undone.length > 0) {
+          switchTab('floor');
+          const u = res.undone[0];
+          const cat = u.source.split('/')[0];
+          await botPlayUndoMove(cat, u.original_source || u.destination);
+          await loadPlan();
+          loadHistory();
+          refreshStats();
+        } else {
+          alert("Could not undo: " + (res.errors ? res.errors.join(', ') : "File missing"));
+        }
+      } catch (e) {
+        alert("Error executing single undo");
+      }
+    }
+
+    // Refresh Stats in Header
+    async function refreshStats() {
+      try {
+        const resp = await fetch('/api/stats');
+        const data = await resp.json();
+        document.getElementById('statsFilesSorted').textContent = `Files sorted: ${data.total_sorted || totalFilesSortedCounter}`;
+        document.getElementById('statsLastRun').textContent = data.last_run ? `Last run: ${new Date(data.last_run).toLocaleTimeString()}` : 'Last run: None';
+      } catch (e) {}
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      buildBins();
+      renderRig();
+      loadPlan();
+      refreshStats();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Python binaries & environments
+py311/
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+
+# Test artifacts & temp downloads
+browser_test_downloads/
+.pytest_cache/
+git.bat
+
+# Local journals & logs
+journal.json
+*.log
+*.tmp
+
+# IDE & OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
